@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 #import "GoogleSignIn.h"
-#import <GoogleSignIn/GIDAuthentication.h>
+#import <GoogleSignIn/GIDSignInResult.h>
 #import <GoogleSignIn/GIDGoogleUser.h>
 #import <GoogleSignIn/GIDProfileData.h>
 #import <GoogleSignIn/GIDSignIn.h>
+#import <GoogleSignIn/GIDToken.h>
 #import <UnityAppController.h>
 
 #import "UnityInterface.h"
@@ -54,6 +55,7 @@ void UnpauseUnityPlayer() {
 struct SignInResult {
   int result_code;
   bool finished;
+  NSString* serverAuthCode;
 };
 
 std::unique_ptr<SignInResult> currentResult_;
@@ -238,10 +240,11 @@ static SignInResult *startSignIn() {
 void *GoogleSignIn_SignIn() {
   SignInResult *result = startSignIn();
   if (!result) {
-    [[GIDSignIn sharedInstance] signInWithConfiguration:[GoogleSignInHandler sharedInstance]->signInConfiguration
-                               presentingViewController:UnityGetGLViewController()
-                                                   hint:[GoogleSignInHandler sharedInstance]->loginHint
-                                               callback:^(GIDGoogleUser *user, NSError *error) {
+    [[GIDSignIn sharedInstance] signInWithPresentingViewController:UnityGetGLViewController()
+                                hint:[GoogleSignInHandler sharedInstance]->loginHint
+                                completion:^(GIDSignInResult *result, NSError *error) {
+        GIDGoogleUser *user = result.user;
+        currentResult_.get()->serverAuthCode = result.serverAuthCode;
         [[GoogleSignInHandler sharedInstance] signIn:[GIDSignIn sharedInstance] didSignInForUser:user withError:error];
     }];
     result = currentResult_.get();
@@ -256,7 +259,7 @@ void *GoogleSignIn_SignIn() {
 void *GoogleSignIn_SignInSilently() {
   SignInResult *result = startSignIn();
   if (!result) {
-    [[GIDSignIn sharedInstance] restorePreviousSignInWithCallback:^(GIDGoogleUser *user, NSError *error) {
+      [[GIDSignIn sharedInstance] restorePreviousSignInWithCompletion:^(GIDGoogleUser *user, NSError *error) {
         [[GoogleSignInHandler sharedInstance] signIn:[GIDSignIn sharedInstance] didSignInForUser:user withError:error];
     }];
     result = currentResult_.get();
@@ -271,7 +274,7 @@ void GoogleSignIn_Signout() {
 
 void GoogleSignIn_Disconnect() {
   GIDSignIn *signIn = [GIDSignIn sharedInstance];
-  [signIn disconnectWithCallback:^(NSError *error) {
+    [signIn disconnectWithCompletion:^(NSError *error) {
       [[GoogleSignInHandler sharedInstance] signIn:[GIDSignIn sharedInstance] didDisconnectWithUser:nil withError:error];
   }];
 }
@@ -321,10 +324,10 @@ static size_t CopyNSString(NSString *src, char *dest, size_t len) {
   return src ? src.length + 1 : 0;
 }
 
-size_t GoogleSignIn_GetServerAuthCode(GIDGoogleUser *guser, char *buf,
+size_t GoogleSignIn_GetServerAuthCode(SignInResult *result, char *buf,
                                       size_t len) {
-  NSString *val = [guser serverAuthCode];
-  return CopyNSString(val, buf, len);
+    NSString *val = result->serverAuthCode;
+    return CopyNSString(val, buf, len);
 }
 
 size_t GoogleSignIn_GetDisplayName(GIDGoogleUser *guser, char *buf,
@@ -349,7 +352,9 @@ size_t GoogleSignIn_GetGivenName(GIDGoogleUser *guser, char *buf, size_t len) {
 }
 
 size_t GoogleSignIn_GetIdToken(GIDGoogleUser *guser, char *buf, size_t len) {
-  NSString *val = [guser.authentication idToken];
+    GIDToken *token = [guser idToken];
+    NSString *val = token.tokenString;
+
   return CopyNSString(val, buf, len);
 }
 

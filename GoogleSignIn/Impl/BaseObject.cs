@@ -35,8 +35,7 @@ namespace Google.Impl {
 
     protected HandleRef SelfPtr() {
       if (selfHandleRef.Equals(nullSelf)) {
-        throw new InvalidOperationException(
-          "Attempted to use object after it was cleaned up");
+        throw new InvalidOperationException("Attempted to use object after it was cleaned up");
       }
       return selfHandleRef;
     }
@@ -45,8 +44,7 @@ namespace Google.Impl {
       selfHandleRef = nullSelf;
     }
 
-    internal delegate UIntPtr OutStringMethod([In, Out] byte[] out_bytes,
-        UIntPtr out_size);
+    internal delegate UIntPtr OutStringMethod([In, Out] byte[] out_bytes,UIntPtr out_size);
 
     internal static String OutParamsToString(OutStringMethod outStringMethod) {
       UIntPtr requiredSize = outStringMethod(null, UIntPtr.Zero);
@@ -58,8 +56,7 @@ namespace Google.Impl {
       try {
         byte[] array = new byte[requiredSize.ToUInt32()];
         outStringMethod(array, requiredSize);
-        str = Encoding.UTF8.GetString(array, 0,
-                (int)requiredSize.ToUInt32() - 1);
+        str = Encoding.UTF8.GetString(array, 0, (int)requiredSize.ToUInt32() - 1);
       } catch (Exception e) {
         Debug.LogError("Exception creating string from char array: " + e);
         str = string.Empty;
