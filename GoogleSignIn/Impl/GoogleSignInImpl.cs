@@ -17,6 +17,8 @@
 
 namespace Google.Impl
 {
+    using Newtonsoft.Json.Linq;
+
     using System;
     using System.Text;
     using System.Linq;
@@ -31,7 +33,6 @@ namespace Google.Impl
 
     internal class GoogleSignInImpl : BaseObject, ISignInImpl
     {
-
         internal GoogleSignInImpl(GoogleSignInConfiguration configuration) : base(GoogleSignIn_Create(GetPlayerActivity()))
         {
 
@@ -106,137 +107,138 @@ namespace Google.Impl
         }
 
 #if UNITY_ANDROID
-    static AndroidJavaClass GoogleSignInHelper = new AndroidJavaClass("com.google.googlesignin.GoogleSignInHelper");
+        static AndroidJavaClass GoogleSignInHelper = new AndroidJavaClass("com.google.googlesignin.GoogleSignInHelper");
 
-    static IntPtr GoogleSignIn_Create(IntPtr activity)
-    {
-        return new AndroidJavaObject("com.google.googlesignin.GoogleSignInHelper").GetRawObject();
-    }
+        static IntPtr GoogleSignIn_Create(IntPtr activity)
+        {
+            return new AndroidJavaObject("com.google.googlesignin.GoogleSignInHelper").GetRawObject();
+        }
 
-    static bool GoogleSignIn_Configure(HandleRef googleSignInHelper,
-        bool useGameSignIn, string webClientId,
-        bool requestAuthCode, bool forceTokenRefresh, bool requestEmail,
-        bool requestIdToken, bool hidePopups, string[] additionalScopes,
-        int scopeCount, string accountName)
-    {
-        GoogleSignInHelper.CallStatic("configure",
-            useGameSignIn,
-            webClientId,
-            requestAuthCode,
-            forceTokenRefresh,
-            requestEmail,
-            requestIdToken,
-            hidePopups,
-            accountName,
-            additionalScopes,
-            new SignInListener());
+        static bool GoogleSignIn_Configure(HandleRef googleSignInHelper,
+            bool useGameSignIn, string webClientId,
+            bool requestAuthCode, bool forceTokenRefresh, bool requestEmail,
+            bool requestIdToken, bool hidePopups, string[] additionalScopes,
+            int scopeCount, string accountName)
+        {
+            GoogleSignInHelper.CallStatic("configure",
+                useGameSignIn,
+                webClientId,
+                requestAuthCode,
+                forceTokenRefresh,
+                requestEmail,
+                requestIdToken,
+                hidePopups,
+                accountName,
+                additionalScopes,
+                new SignInListener());
 
-        return !useGameSignIn;
-    }
+            return !useGameSignIn;
+        }
 
-    static AndroidJavaObject googleIdTokenCredential;
-    static AndroidJavaObject authorizationResult;
+        static AndroidJavaObject googleIdTokenCredential;
+        static AndroidJavaObject authorizationResult;
 
-    public class SignInListener : AndroidJavaProxy
-    {
-        public SignInListener() : base("com.google.googlesignin.IListener") { }
+        public class SignInListener : AndroidJavaProxy
+        {
+            public SignInListener() : base("com.google.googlesignin.IListener") { }
 
-        public void onAuthenticated(AndroidJavaObject _googleIdTokenCredential)
+            public void onAuthenticated(AndroidJavaObject _googleIdTokenCredential)
+            {
+                googleIdTokenCredential?.Dispose();
+                googleIdTokenCredential = _googleIdTokenCredential;
+            }
+
+            public void onAuthorized(AndroidJavaObject _authorizationResult)
+            {
+                authorizationResult?.Dispose();
+                authorizationResult = _authorizationResult;
+            }
+
+            public void onFailure(AndroidJavaObject exception)
+            {
+                Debug.LogErrorFormat("onFailure {0} : {1}", exception?.Call<AndroidJavaObject>("getClass").Call<string>("toString"), exception?.Call<string>("getMessage"));
+                exception.Dispose();
+            }
+
+            public void onCanceled()
+            {
+                googleIdTokenCredential?.Dispose();
+                authorizationResult?.Dispose();
+            }
+        }
+
+        static void GoogleSignIn_EnableDebugLogging(HandleRef self, bool flag) => GoogleSignInHelper.CallStatic("enableDebugLogging", flag);
+
+        static IntPtr GoogleSignIn_SignIn(HandleRef self)
+        {
+            return GoogleSignInHelper.CallStatic<AndroidJavaObject>("signIn").GetRawObject();
+        }
+
+        static IntPtr GoogleSignIn_SignInSilently(HandleRef self)
+        {
+            return GoogleSignInHelper.CallStatic<AndroidJavaObject>("signInSilently").GetRawObject();
+        }
+
+        static void GoogleSignIn_Signout(HandleRef self)
         {
             googleIdTokenCredential?.Dispose();
-            googleIdTokenCredential = _googleIdTokenCredential;
-        }
+            googleIdTokenCredential = null;
 
-        public void onAuthorized(AndroidJavaObject _authorizationResult)
-        {
             authorizationResult?.Dispose();
-            authorizationResult = _authorizationResult;
+            authorizationResult = null;
+
+            GoogleSignInHelper.CallStatic("signOut");
         }
 
-        public void onFailure(AndroidJavaObject exception)
+        static void GoogleSignIn_Disconnect(HandleRef self) => throw new NotImplementedException();
+
+        internal static void GoogleSignIn_DisposeFuture(HandleRef self) => GoogleSignInHelper.CallStatic("cancel");
+
+        internal static bool GoogleSignIn_Pending(HandleRef self) => GoogleSignInHelper.CallStatic<bool>("isPending");
+
+        internal static IntPtr GoogleSignIn_Result(HandleRef self) => googleIdTokenCredential.GetRawObject();
+
+        internal static int GoogleSignIn_Status(HandleRef self) => GoogleSignInHelper.CallStatic<int>("getStatus");
+
+        internal static string GoogleSignIn_GetServerAuthCode(HandleRef self) => authorizationResult?.Call<string>("getServerAuthCode");
+
+        internal static string GoogleSignIn_GetUserId(HandleRef self)
         {
-            Debug.LogErrorFormat("onFailure {0} : {1}",exception?.Call<AndroidJavaObject>("getClass").Call<string>("toString"),exception?.Call<string>("getMessage"));
-            exception.Dispose();
-        }
+            string idTokenFull = null;
+            try
+            {
+                idTokenFull = googleIdTokenCredential?.Call<string>("getIdToken");
+                string idTokenPart = idTokenFull?.Split('.')?.ElementAtOrDefault(1);
+                if (!(idTokenPart?.Length is int length && length > 1))
+                    return null;
 
-        public void onCanceled() {
-            googleIdTokenCredential?.Dispose();
-            authorizationResult?.Dispose();
-        }
-    }
-
-    static void GoogleSignIn_EnableDebugLogging(HandleRef self, bool flag) => GoogleSignInHelper.CallStatic("enableDebugLogging",flag);
-
-    static IntPtr GoogleSignIn_SignIn(HandleRef self)
-    {
-        return GoogleSignInHelper.CallStatic<AndroidJavaObject>("signIn").GetRawObject();
-    }
-
-    static IntPtr GoogleSignIn_SignInSilently(HandleRef self)
-    {
-        return GoogleSignInHelper.CallStatic<AndroidJavaObject>("signInSilently").GetRawObject();
-    }
-
-    static void GoogleSignIn_Signout(HandleRef self)
-    {
-        googleIdTokenCredential?.Dispose();
-        googleIdTokenCredential = null;
-
-        authorizationResult?.Dispose();
-        authorizationResult = null;
-
-        GoogleSignInHelper.CallStatic("signOut");
-    }
-
-    static void GoogleSignIn_Disconnect(HandleRef self) => throw new NotImplementedException();
-
-    internal static void GoogleSignIn_DisposeFuture(HandleRef self) => GoogleSignInHelper.CallStatic("cancel");
-
-    internal static bool GoogleSignIn_Pending(HandleRef self) => GoogleSignInHelper.CallStatic<bool>("isPending");
-
-    internal static IntPtr GoogleSignIn_Result(HandleRef self) => googleIdTokenCredential.GetRawObject();
-
-    internal static int GoogleSignIn_Status(HandleRef self) => GoogleSignInHelper.CallStatic<int>("getStatus");
-    
-    internal static string GoogleSignIn_GetServerAuthCode(HandleRef self) => authorizationResult?.Call<string>("getServerAuthCode");
-
-    internal static string GoogleSignIn_GetUserId(HandleRef self)
-    {
-        string idTokenFull = null;
-        try
-        {
-            idTokenFull = googleIdTokenCredential?.Call<string>("getIdToken");
-            string idTokenPart = idTokenFull?.Split('.')?.ElementAtOrDefault(1);
-            if(!(idTokenPart?.Length is int length && length > 1))
+                // Replace URL-safe characters and fix padding
+                idTokenPart = idTokenPart.Replace('-', '+').Replace('_', '/');
+                string fill = new string('=', (4 - (idTokenPart.Length % 4)) % 4);
+                byte[] idTokenFromBase64 = Convert.FromBase64String(idTokenPart + fill);
+                string idToken = Encoding.UTF8.GetString(idTokenFromBase64);
+                JObject jobj = Newtonsoft.Json.Linq.JObject.Parse(idToken);
+                return jobj?["sub"]?.ToString();
+            }
+            catch (Exception e)
+            {
+                // Debug.LogException(new Exception($"GoogleSignIn_GetUserId.idTokenFull {idTokenFull}"));
+                Debug.LogException(e);
                 return null;
-
-            // Replace URL-safe characters and fix padding
-            idTokenPart = idTokenPart.Replace('-', '+').Replace('_', '/');
-            string fill = new string('=',(4 - (idTokenPart.Length % 4)) % 4);
-            byte[] idTokenFromBase64 = Convert.FromBase64String(idTokenPart + fill);
-            string idToken = Encoding.UTF8.GetString(idTokenFromBase64);
-            JObject jobj = Newtonsoft.Json.Linq.JObject.Parse(idToken);
-            return jobj?["sub"]?.ToString();
+            }
         }
-        catch(Exception e)
-        {
-            // Debug.LogException(new Exception($"GoogleSignIn_GetUserId.idTokenFull {idTokenFull}"));
-            Debug.LogException(e);
-            return null;
-        }
-    }
 
-    internal static string GoogleSignIn_GetEmail(HandleRef self) => googleIdTokenCredential?.Call<string>("getId");
+        internal static string GoogleSignIn_GetEmail(HandleRef self) => googleIdTokenCredential?.Call<string>("getId");
 
-    internal static string GoogleSignIn_GetDisplayName(HandleRef self) => googleIdTokenCredential?.Call<string>("getDisplayName");
+        internal static string GoogleSignIn_GetDisplayName(HandleRef self) => googleIdTokenCredential?.Call<string>("getDisplayName");
 
-    internal static string GoogleSignIn_GetFamilyName(HandleRef self) => googleIdTokenCredential?.Call<string>("getFamilyName");
+        internal static string GoogleSignIn_GetFamilyName(HandleRef self) => googleIdTokenCredential?.Call<string>("getFamilyName");
 
-    internal static string GoogleSignIn_GetGivenName(HandleRef self) => googleIdTokenCredential?.Call<string>("getGivenName");
+        internal static string GoogleSignIn_GetGivenName(HandleRef self) => googleIdTokenCredential?.Call<string>("getGivenName");
 
-    internal static string GoogleSignIn_GetIdToken(HandleRef self) => googleIdTokenCredential?.Call<string>("getIdToken");
+        internal static string GoogleSignIn_GetIdToken(HandleRef self) => googleIdTokenCredential?.Call<string>("getIdToken");
 
-    internal static string GoogleSignIn_GetImageUrl(HandleRef self) => googleIdTokenCredential?.Call<AndroidJavaObject>("getProfilePictureUri")?.Call<string>("toString");
+        internal static string GoogleSignIn_GetImageUrl(HandleRef self) => googleIdTokenCredential?.Call<AndroidJavaObject>("getProfilePictureUri")?.Call<string>("toString");
 #else
         private const string DllName = "__Internal";
 
