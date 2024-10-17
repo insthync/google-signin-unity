@@ -1,6 +1,4 @@
-#if UNITY_EDITOR
-using UnityEngine;
-
+#if UNITY_EDITOR && UNITY_IOS
 using UnityEditor;
 using UnityEditor.iOS.Xcode;
 
@@ -18,7 +16,6 @@ public class PListProcessor : IPostprocessBuildWithReport
 
     public void OnPostprocessBuild(BuildReport report)
     {
-#if UNITY_IOS
         string projectBundleId = PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.iOS);
         PlistDocument[] plistFiles = AssetDatabase.FindAssets("glob:\"**/*.plist\"").Select((guid) =>
         {
@@ -62,7 +59,6 @@ public class PListProcessor : IPostprocessBuildWithReport
         }
 
         info.WriteToFile(plistPath);
-#endif
     }
 }
 #endif
