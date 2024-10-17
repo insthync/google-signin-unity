@@ -60,7 +60,7 @@ namespace Google.Impl
         {
             ushort minPort = 49215;
 #if UNITY_EDITOR_WIN
-            var listeners = IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners();
+            IPEndPoint[] listeners = IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners();
             return Enumerable.Range(minPort, ushort.MaxValue - minPort).Where((i) => !listeners.Any((x) => x.Port == i)).Select((port) =>
             {
 #elif UNITY_EDITOR_OSX
@@ -70,7 +70,7 @@ namespace Google.Impl
 #endif
                 try
                 {
-                    var listener = new HttpListener();
+                    HttpListener listener = new HttpListener();
                     listener.Prefixes.Add($"http://localhost:{port}/");
                     listener.Start();
                     return listener;
@@ -86,10 +86,10 @@ namespace Google.Impl
         void SigningIn()
         {
             Pending = true;
-            var httpListener = BindLocalHostFirstAvailablePort();
+            HttpListener httpListener = BindLocalHostFirstAvailablePort();
             try
             {
-                var openURL = "https://accounts.google.com/o/oauth2/v2/auth?" + Uri.EscapeUriString("scope=openid email profile&response_type=code&redirect_uri=" + httpListener.Prefixes.FirstOrDefault() + "&client_id=" + configuration.WebClientId);
+                string openURL = "https://accounts.google.com/o/oauth2/v2/auth?" + Uri.EscapeUriString("scope=openid email profile&response_type=code&redirect_uri=" + httpListener.Prefixes.FirstOrDefault() + "&client_id=" + configuration.WebClientId);
                 Debug.Log(openURL);
                 Application.OpenURL(openURL);
             }
@@ -99,14 +99,14 @@ namespace Google.Impl
                 throw;
             }
 
-            var taskScheduler = TaskScheduler.FromCurrentSynchronizationContext();
+            TaskScheduler taskScheduler = TaskScheduler.FromCurrentSynchronizationContext();
             httpListener.GetContextAsync().ContinueWith(async (task) =>
             {
                 try
                 {
                     Debug.Log(task);
-                    var context = task.Result;
-                    var queryString = context.Request.Url.Query;
+                    HttpListenerContext context = task.Result;
+                    string queryString = context.Request.Url.Query;
                     var queryDictionary = System.Web.HttpUtility.ParseQueryString(queryString);
                     if (queryDictionary == null || queryDictionary.Get("code") is not string code || string.IsNullOrEmpty(code))
                     {
@@ -122,29 +122,29 @@ namespace Google.Impl
                     context.Response.OutputStream.Write(Encoding.UTF8.GetBytes("Can close this page"));
                     context.Response.Close();
 
-                    var jobj = await HttpWebRequest.CreateHttp("https://www.googleapis.com/oauth2/v4/token").Post("application/x-www-form-urlencoded", "code=" + code + "&client_id=" + configuration.WebClientId + "&client_secret=" + configuration.ClientSecret + "&redirect_uri=" + httpListener.Prefixes.FirstOrDefault() + "&grant_type=authorization_code").ContinueWith((task) =>
+                    JObject jobj = await WebRequest.CreateHttp("https://www.googleapis.com/oauth2/v4/token").Post("application/x-www-form-urlencoded", "code=" + code + "&client_id=" + configuration.WebClientId + "&client_secret=" + configuration.ClientSecret + "&redirect_uri=" + httpListener.Prefixes.FirstOrDefault() + "&grant_type=authorization_code").ContinueWith((task) =>
                     {
                         return JObject.Parse(task.Result);
                     }, taskScheduler);
 
-                    var accessToken = (string)jobj.GetValue("access_token");
-                    var expiresIn = (int)jobj.GetValue("expires_in");
-                    var scope = (string)jobj.GetValue("scope");
-                    var tokenType = (string)jobj.GetValue("token_type");
+                    string accessToken = (string)jobj.GetValue("access_token");
+                    int expiresIn = (int)jobj.GetValue("expires_in");
+                    string scope = (string)jobj.GetValue("scope");
+                    string tokenType = (string)jobj.GetValue("token_type");
 
-                    var user = new GoogleSignInUser();
+                    GoogleSignInUser user = new GoogleSignInUser();
                     if (configuration.RequestAuthCode)
                         user.AuthCode = code;
 
                     if (configuration.RequestIdToken)
                         user.IdToken = (string)jobj.GetValue("id_token");
 
-                    var request = HttpWebRequest.CreateHttp("https://openidconnect.googleapis.com/v1/userinfo");
+                    HttpWebRequest request = WebRequest.CreateHttp("https://openidconnect.googleapis.com/v1/userinfo");
                     request.Method = "GET";
                     request.Headers.Add("Authorization", "Bearer " + accessToken);
 
-                    var data = await request.GetResponseAsStringAsync().ContinueWith((task) => task.Result, taskScheduler);
-                    var userInfo = JObject.Parse(data);
+                    string data = await request.GetResponseAsStringAsync().ContinueWith((task) => task.Result, taskScheduler);
+                    JObject userInfo = JObject.Parse(data);
                     user.UserId = (string)userInfo.GetValue("sub");
                     user.DisplayName = (string)userInfo.GetValue("name");
 
@@ -155,7 +155,7 @@ namespace Google.Impl
                     {
                         user.GivenName = (string)userInfo.GetValue("given_name");
                         user.FamilyName = (string)userInfo.GetValue("family_name");
-                        user.ImageUrl = Uri.TryCreate((string)userInfo.GetValue("picture"), UriKind.Absolute, out var url) ? url : null;
+                        user.ImageUrl = Uri.TryCreate((string)userInfo.GetValue("picture"), UriKind.Absolute, out Uri url) ? url : null;
                     }
 
                     Result = user;
@@ -193,9 +193,9 @@ namespace Google.Impl
 
         public static async Task<string> GetResponseAsStringAsync(this HttpWebRequest request, Encoding encoding = null)
         {
-            using (var response = await request.GetResponseAsync())
+            using (WebResponse response = await request.GetResponseAsync())
             {
-                using (var stream = response.GetResponseStream())
+                using (Stream stream = response.GetResponseStream())
                     return stream.ReadToEnd(encoding ?? Encoding.UTF8);
             }
         }

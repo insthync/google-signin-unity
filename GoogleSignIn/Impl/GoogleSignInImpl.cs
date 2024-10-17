@@ -206,16 +206,16 @@ namespace Google.Impl
         try
         {
             idTokenFull = googleIdTokenCredential?.Call<string>("getIdToken");
-            var idTokenPart = idTokenFull?.Split('.')?.ElementAtOrDefault(1);
+            string idTokenPart = idTokenFull?.Split('.')?.ElementAtOrDefault(1);
             if(!(idTokenPart?.Length is int length && length > 1))
                 return null;
 
             // Replace URL-safe characters and fix padding
             idTokenPart = idTokenPart.Replace('-', '+').Replace('_', '/');
             string fill = new string('=',(4 - (idTokenPart.Length % 4)) % 4);
-            var idTokenFromBase64 = Convert.FromBase64String(idTokenPart + fill);
-            var idToken = Encoding.UTF8.GetString(idTokenFromBase64);
-            var jobj = Newtonsoft.Json.Linq.JObject.Parse(idToken);
+            byte[] idTokenFromBase64 = Convert.FromBase64String(idTokenPart + fill);
+            string idToken = Encoding.UTF8.GetString(idTokenFromBase64);
+            JObject jobj = Newtonsoft.Json.Linq.JObject.Parse(idToken);
             return jobj?["sub"]?.ToString();
         }
         catch(Exception e)
@@ -341,7 +341,7 @@ namespace Google.Impl
         private static IntPtr GetPlayerActivity()
         {
 #if UNITY_ANDROID
-            var jc = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+            AndroidJavaClass jc = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
             return jc.GetStatic<AndroidJavaObject>("currentActivity").GetRawObject();
 #else
             return IntPtr.Zero;

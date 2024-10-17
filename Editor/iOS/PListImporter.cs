@@ -1,8 +1,6 @@
 #if UNITY_EDITOR
 using System.IO;
-
 using UnityEngine;
-
 using UnityEditor.AssetImporters;
 
 [ScriptedImporter(1, "plist")]
@@ -13,7 +11,7 @@ public class PListImporter : ScriptedImporter
         if (ctx.mainObject is TextAsset)
             return;
 
-        var subAsset = new TextAsset(File.ReadAllText(ctx.assetPath));
+        TextAsset subAsset = new TextAsset(File.ReadAllText(ctx.assetPath));
         ctx.AddObjectToAsset("text", subAsset);
         ctx.SetMainObject(subAsset);
     }

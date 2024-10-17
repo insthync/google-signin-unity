@@ -46,8 +46,8 @@ namespace Google.Impl
                     return null;
                 }
 
-                var user = new GoogleSignInUser();
-                var userPtr = new HandleRef(user, ptr);
+                GoogleSignInUser user = new GoogleSignInUser();
+                HandleRef userPtr = new HandleRef(user, ptr);
 
                 user.UserId = GoogleSignInImpl.GoogleSignIn_GetUserId(userPtr);
 
