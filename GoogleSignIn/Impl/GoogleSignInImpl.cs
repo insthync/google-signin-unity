@@ -217,7 +217,7 @@ namespace Google.Impl
                 string fill = new string('=', (4 - (idTokenPart.Length % 4)) % 4);
                 byte[] idTokenFromBase64 = Convert.FromBase64String(idTokenPart + fill);
                 string idToken = Encoding.UTF8.GetString(idTokenFromBase64);
-                JObject jobj = Newtonsoft.Json.Linq.JObject.Parse(idToken);
+                JObject jobj = JObject.Parse(idToken);
                 return jobj?["sub"]?.ToString();
             }
             catch (Exception e)

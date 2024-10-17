@@ -75,7 +75,7 @@ namespace Google.Impl
                     listener.Start();
                     return listener;
                 }
-                catch (System.Exception e)
+                catch (Exception e)
                 {
                     Debug.LogException(e);
                     return null;

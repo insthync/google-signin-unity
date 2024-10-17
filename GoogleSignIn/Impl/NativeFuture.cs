@@ -59,7 +59,7 @@ namespace Google.Impl
                 string url = GoogleSignInImpl.GoogleSignIn_GetImageUrl(userPtr);
                 if (url?.Length > 0)
                 {
-                    user.ImageUrl = new System.Uri(url);
+                    user.ImageUrl = new Uri(url);
                 }
 
                 return user;
