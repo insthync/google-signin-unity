@@ -14,55 +14,57 @@
 //    limitations under the License.
 // </copyright>
 
-namespace Google {
-  using System.Collections.Generic;
+namespace Google
+{
+    using System.Collections.Generic;
 
-  /// <summary>
-  /// Configuration properties for Google Sign-In.
-  /// </summary>
-  public class GoogleSignInConfiguration {
-    /// <summary>Set to true to use games signin, false for default signin.
+    /// <summary>
+    /// Configuration properties for Google Sign-In.
     /// </summary>
-    /// <remarks>Note: The Games configuration is not supported on non-Android
-    /// platforms.
-    /// If games configuration is used, you must also add the
-    /// play-services-games libraries and dependencies.
-    /// See the README for more details.
-    /// </remarks>
-    public bool UseGameSignIn = false;
+    public class GoogleSignInConfiguration
+    {
+        /// <summary>Set to true to use games signin, false for default signin.
+        /// </summary>
+        /// <remarks>Note: The Games configuration is not supported on non-Android
+        /// platforms.
+        /// If games configuration is used, you must also add the
+        /// play-services-games libraries and dependencies.
+        /// See the README for more details.
+        /// </remarks>
+        public bool UseGameSignIn = false;
 #if UNITY_EDITOR || UNITY_STANDALONE
-    /// <summary>Client Secret for used in editor and desktop platform</summary>
-    /// <remarks>Required for requesting auth code or id token in editor</remarks>
-    public string ClientSecret = null;
+        /// <summary>Client Secret for used in editor and desktop platform</summary>
+        /// <remarks>Required for requesting auth code or id token in editor</remarks>
+        public string ClientSecret = null;
 #endif
-    /// <summary>Web client id associated with this app.</summary>
-    /// <remarks>Required for requesting auth code or id token.</remarks>
-    public string WebClientId = null;
-    /// <summary>Set to true for getting an auth code when authenticating.
-    /// </summary>
-    public bool RequestAuthCode = false;
-    /// <summary>Set to true to request to reset the refresh token.
-    ///   Causes re-consent.
-    /// </summary>
-    public bool ForceTokenRefresh = false;
-    /// <summary>Request email address, requires consent.</summary>
-    public bool RequestEmail = false;
-    /// <summary>Request id token, requires consent.</summary>
-    public bool RequestIdToken = false;
-    /// <summary>Request profile information, requires consent.</summary>
-    public bool RequestProfile = true;
-    /// <summary>Hides popup UIs from games services.</summary>
-    /// <remarks>Used with games signin to show or hide the connecting popup UI
-    /// and to associate an invisible view for other popups.  This is
-    /// recommended for VR applications.  This has no effect if UseGameSignIn is
-    /// false.
-    /// </remarks>
-    public bool HidePopups = false;
-    /// <summary>Account name to use when authenticating,
-    ///  null indicates use default.</summary>
-    public string AccountName = null;
-    /// <summary>Additional scopes to request, requires consent.</summary>
-    public IEnumerable<string> AdditionalScopes = null;
-  }
+        /// <summary>Web client id associated with this app.</summary>
+        /// <remarks>Required for requesting auth code or id token.</remarks>
+        public string WebClientId = null;
+        /// <summary>Set to true for getting an auth code when authenticating.
+        /// </summary>
+        public bool RequestAuthCode = false;
+        /// <summary>Set to true to request to reset the refresh token.
+        ///   Causes re-consent.
+        /// </summary>
+        public bool ForceTokenRefresh = false;
+        /// <summary>Request email address, requires consent.</summary>
+        public bool RequestEmail = false;
+        /// <summary>Request id token, requires consent.</summary>
+        public bool RequestIdToken = false;
+        /// <summary>Request profile information, requires consent.</summary>
+        public bool RequestProfile = true;
+        /// <summary>Hides popup UIs from games services.</summary>
+        /// <remarks>Used with games signin to show or hide the connecting popup UI
+        /// and to associate an invisible view for other popups.  This is
+        /// recommended for VR applications.  This has no effect if UseGameSignIn is
+        /// false.
+        /// </remarks>
+        public bool HidePopups = false;
+        /// <summary>Account name to use when authenticating,
+        ///  null indicates use default.</summary>
+        public string AccountName = null;
+        /// <summary>Additional scopes to request, requires consent.</summary>
+        public IEnumerable<string> AdditionalScopes = null;
+    }
 }
 
