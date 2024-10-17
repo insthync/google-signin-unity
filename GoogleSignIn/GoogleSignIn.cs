@@ -76,7 +76,7 @@ namespace Google
             set
             {
                 // Can set the configuration until the singleton is created.
-                if (theInstance == null || theConfiguration == value || theConfiguration == null)
+                if (theInstance == null || theConfiguration == value)
                 {
                     theConfiguration = value;
                 }
