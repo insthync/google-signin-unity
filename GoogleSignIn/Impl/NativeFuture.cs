@@ -15,72 +15,81 @@
 //    limitations under the License.
 // </copyright>
 
-namespace Google.Impl {
-  using System;
+namespace Google.Impl
+{
+    using System;
     using System.Runtime.InteropServices;
 
-  /// <summary>
-  /// Native future is an interal class that implements the FutureAPIImpl
-  /// by calling native methods which are implemented in the native code.
-  /// </summary>
-  internal class NativeFuture : BaseObject, FutureAPIImpl<GoogleSignInUser> {
+    /// <summary>
+    /// Native future is an interal class that implements the FutureAPIImpl
+    /// by calling native methods which are implemented in the native code.
+    /// </summary>
+    internal class NativeFuture : BaseObject, FutureAPIImpl<GoogleSignInUser>
+    {
 
-    internal NativeFuture(IntPtr ptr) : base(ptr) {
-    }
-
-    public override void Dispose() => GoogleSignInImpl.GoogleSignIn_DisposeFuture(SelfPtr());
-
-    public bool Pending => GoogleSignInImpl.GoogleSignIn_Pending(SelfPtr());
-
-    public GoogleSignInUser Result {
-      get {
-        HandleRef self = SelfPtr();
-        IntPtr ptr = GoogleSignInImpl.GoogleSignIn_Result(self);
-        if (ptr == IntPtr.Zero) {
-          return null;
+        internal NativeFuture(IntPtr ptr) : base(ptr)
+        {
         }
 
-        var user = new GoogleSignInUser();
-        var userPtr = new HandleRef(user, ptr);
+        public override void Dispose() => GoogleSignInImpl.GoogleSignIn_DisposeFuture(SelfPtr());
 
-        user.UserId = GoogleSignInImpl.GoogleSignIn_GetUserId(userPtr);
+        public bool Pending => GoogleSignInImpl.GoogleSignIn_Pending(SelfPtr());
 
-        user.Email = GoogleSignInImpl.GoogleSignIn_GetEmail(userPtr);
+        public GoogleSignInUser Result
+        {
+            get
+            {
+                HandleRef self = SelfPtr();
+                IntPtr ptr = GoogleSignInImpl.GoogleSignIn_Result(self);
+                if (ptr == IntPtr.Zero)
+                {
+                    return null;
+                }
 
-        user.DisplayName = GoogleSignInImpl.GoogleSignIn_GetDisplayName(userPtr);
+                var user = new GoogleSignInUser();
+                var userPtr = new HandleRef(user, ptr);
 
-        user.FamilyName = GoogleSignInImpl.GoogleSignIn_GetFamilyName(userPtr);
+                user.UserId = GoogleSignInImpl.GoogleSignIn_GetUserId(userPtr);
 
-        user.GivenName = GoogleSignInImpl.GoogleSignIn_GetGivenName(userPtr);
+                user.Email = GoogleSignInImpl.GoogleSignIn_GetEmail(userPtr);
 
-        user.IdToken = GoogleSignInImpl.GoogleSignIn_GetIdToken(userPtr);
+                user.DisplayName = GoogleSignInImpl.GoogleSignIn_GetDisplayName(userPtr);
 
-        user.AuthCode = GoogleSignInImpl.GoogleSignIn_GetServerAuthCode(self);
+                user.FamilyName = GoogleSignInImpl.GoogleSignIn_GetFamilyName(userPtr);
 
-        string url = GoogleSignInImpl.GoogleSignIn_GetImageUrl(userPtr);
-        if (url?.Length > 0) {
-          user.ImageUrl = new System.Uri(url);
-        }
+                user.GivenName = GoogleSignInImpl.GoogleSignIn_GetGivenName(userPtr);
+
+                user.IdToken = GoogleSignInImpl.GoogleSignIn_GetIdToken(userPtr);
+
+                user.AuthCode = GoogleSignInImpl.GoogleSignIn_GetServerAuthCode(self);
+
+                string url = GoogleSignInImpl.GoogleSignIn_GetImageUrl(userPtr);
+                if (url?.Length > 0)
+                {
+                    user.ImageUrl = new System.Uri(url);
+                }
 
 #pragma warning disable CS0219 // Require for no reason (tree shaking ?)
-        var obj = (user.UserId,user.Email,user.DisplayName,user.FamilyName,user.GivenName,user.IdToken,user.AuthCode,user.ImageUrl);
+                var obj = (user.UserId, user.Email, user.DisplayName, user.FamilyName, user.GivenName, user.IdToken, user.AuthCode, user.ImageUrl);
 #pragma warning restore CS0219
 
-        return user;
-      }
-    }
+                return user;
+            }
+        }
 
-    /// <summary>
-    /// Gets the status.
-    /// </summary>
-    /// <remarks>The platform specific implementation maps the platform specific
-    /// code to one defined in GoogleSignStatusCode.</remarks>
-    /// <value>The status.</value>
-    public GoogleSignInStatusCode Status {
-      get {
-        return (GoogleSignInStatusCode)GoogleSignInImpl.GoogleSignIn_Status(SelfPtr());
-      }
+        /// <summary>
+        /// Gets the status.
+        /// </summary>
+        /// <remarks>The platform specific implementation maps the platform specific
+        /// code to one defined in GoogleSignStatusCode.</remarks>
+        /// <value>The status.</value>
+        public GoogleSignInStatusCode Status
+        {
+            get
+            {
+                return (GoogleSignInStatusCode)GoogleSignInImpl.GoogleSignIn_Status(SelfPtr());
+            }
+        }
     }
-  }
 }
 #endif
