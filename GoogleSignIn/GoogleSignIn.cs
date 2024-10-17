@@ -20,7 +20,6 @@ namespace Google
     using System.Runtime.Serialization;
     using System.Threading.Tasks;
     using Google.Impl;
-    using UnityEngine;
 
     /// <summary>
     /// Google sign in API.
@@ -56,6 +55,13 @@ namespace Google
             Debug.LogError("This platform is not supported");
         }
 #endif
+
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.BeforeSceneLoad)]
+        public static void Initialize()
+        {
+            theInstance = null;
+            theConfiguration = null;
+        }
 
         private static GoogleSignIn theInstance = null;
         private static GoogleSignInConfiguration theConfiguration = null;
@@ -99,10 +105,10 @@ namespace Google
 #if UNITY_EDITOR || UNITY_STANDALONE
                     theInstance = new GoogleSignIn(new GoogleSignInImplEditor(Configuration));
 #elif UNITY_ANDROID || UNITY_IOS
-          theInstance = new GoogleSignIn(new GoogleSignInImpl(Configuration));
+                    theInstance = new GoogleSignIn(new GoogleSignInImpl(Configuration));
 #else
-          theInstance = new GoogleSignIn(null);
-          throw new SignInException(GoogleSignInStatusCode.DEVELOPER_ERROR,"This platform is not supported by GoogleSignIn");
+                    theInstance = new GoogleSignIn(null);
+                    throw new SignInException(GoogleSignInStatusCode.DEVELOPER_ERROR,"This platform is not supported by GoogleSignIn");
 #endif
                 }
                 return theInstance;
