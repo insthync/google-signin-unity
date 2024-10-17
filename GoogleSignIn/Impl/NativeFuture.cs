@@ -50,28 +50,17 @@ namespace Google.Impl
                 HandleRef userPtr = new HandleRef(user, ptr);
 
                 user.UserId = GoogleSignInImpl.GoogleSignIn_GetUserId(userPtr);
-
                 user.Email = GoogleSignInImpl.GoogleSignIn_GetEmail(userPtr);
-
                 user.DisplayName = GoogleSignInImpl.GoogleSignIn_GetDisplayName(userPtr);
-
                 user.FamilyName = GoogleSignInImpl.GoogleSignIn_GetFamilyName(userPtr);
-
                 user.GivenName = GoogleSignInImpl.GoogleSignIn_GetGivenName(userPtr);
-
                 user.IdToken = GoogleSignInImpl.GoogleSignIn_GetIdToken(userPtr);
-
                 user.AuthCode = GoogleSignInImpl.GoogleSignIn_GetServerAuthCode(self);
-
                 string url = GoogleSignInImpl.GoogleSignIn_GetImageUrl(userPtr);
                 if (url?.Length > 0)
                 {
                     user.ImageUrl = new System.Uri(url);
                 }
-
-#pragma warning disable CS0219 // Require for no reason (tree shaking ?)
-                var obj = (user.UserId, user.Email, user.DisplayName, user.FamilyName, user.GivenName, user.IdToken, user.AuthCode, user.ImageUrl);
-#pragma warning restore CS0219
 
                 return user;
             }
