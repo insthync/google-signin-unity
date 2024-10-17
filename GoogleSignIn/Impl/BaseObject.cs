@@ -52,7 +52,7 @@ namespace Google.Impl
 
         internal delegate UIntPtr OutStringMethod([In, Out] byte[] out_bytes, UIntPtr out_size);
 
-        internal static String OutParamsToString(OutStringMethod outStringMethod)
+        internal static string OutParamsToString(OutStringMethod outStringMethod)
         {
             UIntPtr requiredSize = outStringMethod(null, UIntPtr.Zero);
             if (requiredSize.Equals(UIntPtr.Zero))
@@ -60,7 +60,7 @@ namespace Google.Impl
                 return null;
             }
 
-            string str = null;
+            string str;
             try
             {
                 byte[] array = new byte[requiredSize.ToUInt32()];
