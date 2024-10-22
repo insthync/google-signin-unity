@@ -64,9 +64,9 @@ namespace Google.Impl
             return Enumerable.Range(minPort, ushort.MaxValue - minPort).Where((i) => !listeners.Any((x) => x.Port == i)).Select((port) =>
             {
 #elif UNITY_EDITOR_OSX
-      return Enumerable.Range(minPort, ushort.MaxValue - minPort).Select((port) => {
+                return Enumerable.Range(minPort, ushort.MaxValue - minPort).Select((port) => {
 #else
-      return Enumerable.Range(0,10).Select((i) => UnityEngine.Random.Range(minPort,ushort.MaxValue)).Select((port) => {
+                return Enumerable.Range(0,10).Select((i) => UnityEngine.Random.Range(minPort, ushort.MaxValue)).Select((port) => {
 #endif
                 try
                 {
@@ -122,8 +122,17 @@ namespace Google.Impl
                     context.Response.OutputStream.Write(Encoding.UTF8.GetBytes("Can close this page"));
                     context.Response.Close();
 
-                    JObject jobj = await WebRequest.CreateHttp("https://www.googleapis.com/oauth2/v4/token").Post("application/x-www-form-urlencoded", "code=" + code + "&client_id=" + configuration.WebClientId + "&client_secret=" + configuration.ClientSecret + "&redirect_uri=" + httpListener.Prefixes.FirstOrDefault() + "&grant_type=authorization_code").ContinueWith((task) =>
+                    string postData =
+                        "code=" + code +
+                        "&client_id=" + configuration.WebClientId +
+                        "&client_secret=" + configuration.ClientSecret +
+                        "&redirect_uri=" + httpListener.Prefixes.FirstOrDefault() +
+                        "&grant_type=authorization_code";
+
+                    Debug.Log("Retrieving from https://oauth2.googleapis.com/token, Data " + postData);
+                    JObject jobj = await WebRequest.CreateHttp("https://oauth2.googleapis.com/token").Post("application/x-www-form-urlencoded", postData).ContinueWith((task) =>
                     {
+                        Debug.Log("Retrieved " + task.Result);
                         return JObject.Parse(task.Result);
                     }, taskScheduler);
 
@@ -139,11 +148,11 @@ namespace Google.Impl
                     if (configuration.RequestIdToken)
                         user.IdToken = (string)jobj.GetValue("id_token");
 
-                    HttpWebRequest request = WebRequest.CreateHttp("https://openidconnect.googleapis.com/v1/userinfo");
+                    HttpWebRequest request = WebRequest.CreateHttp("https://oauth2.googleapis.com/tokeninfo?id_token=" + (string)jobj.GetValue("id_token"));
                     request.Method = "GET";
-                    request.Headers.Add("Authorization", "Bearer " + accessToken);
 
                     string data = await request.GetResponseAsStringAsync().ContinueWith((task) => task.Result, taskScheduler);
+                    Debug.Log("Token Info " + data);
                     JObject userInfo = JObject.Parse(data);
                     user.UserId = (string)userInfo.GetValue("sub");
                     user.DisplayName = (string)userInfo.GetValue("name");
