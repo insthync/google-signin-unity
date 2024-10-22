@@ -20,6 +20,7 @@ namespace Google
     using System.Runtime.Serialization;
     using System.Threading.Tasks;
     using Google.Impl;
+    using UnityEngine;
 
     /// <summary>
     /// Google sign in API.
